@@ -86,23 +86,25 @@ async def root():
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
     if db is None:
-    raise HTTPException(status_code=503, detail="Database not configured")
-    
+        raise HTTPException(status_code=503, detail="Database not configured")
+
     status_dict = input.model_dump()
     status_obj = StatusCheck(**status_dict)
     doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
+    doc["timestamp"] = doc["timestamp"].isoformat()
     _ = await db.status_checks.insert_one(doc)
     return status_obj
 
+
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
-   if db is None:
-    raise HTTPException(status_code=503, detail="Database not configured")
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not configured")
+
     status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
     for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
+        if isinstance(check["timestamp"], str):
+            check["timestamp"] = datetime.fromisoformat(check["timestamp"])
     return status_checks
 
 @api_router.post("/tts", response_model=TTSResponse)

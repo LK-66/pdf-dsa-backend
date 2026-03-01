@@ -179,12 +179,12 @@ async def text_to_speech(request: TTSRequest):
             raise HTTPException(status_code=400, detail="Speed must be between 0.25 and 4.0")
 
         audio = client.audio.speech.create(
-            model=request.model,
-            voice=request.voice,
-            input=request.text,
-            speed=request.speed,
-            format="mp3",
-        )
+    model=request.model,
+    voice=request.voice,
+    input=request.text,
+    speed=request.speed,
+    response_format="mp3",
+)
         audio_bytes = audio.read()
         audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
         return TTSResponse(audio_base64=audio_base64, format="mp3")
@@ -208,12 +208,12 @@ async def text_to_speech_stream(request: TTSRequest):
             raise HTTPException(status_code=400, detail="Text cannot be empty")
 
         audio = client.audio.speech.create(
-            model=request.model,
-            voice=request.voice,
-            input=request.text,
-            speed=request.speed,
-            format="mp3",
-        )
+    model=request.model,
+    voice=request.voice,
+    input=request.text,
+    speed=request.speed,
+    response_format="mp3",
+)
         audio_bytes = audio.read()
 
         return Response(

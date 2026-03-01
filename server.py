@@ -90,45 +90,39 @@ async def get_status_checks():
 async def text_to_speech(request: TTSRequest):
     """Convert text to speech using OpenAI TTS API"""
     try:
-        from emergentintegrations.llm.openai import OpenAITextToSpeech
-        
-        api_key = os.getenv("EMERGENT_LLM_KEY")
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise HTTPException(status_code=500, detail="TTS API key not configured")
-        
+            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
+
         # Validate text length
         if len(request.text) > 4096:
             raise HTTPException(status_code=400, detail="Text exceeds maximum length of 4096 characters")
-        
+
         if not request.text.strip():
             raise HTTPException(status_code=400, detail="Text cannot be empty")
-        
-        # Validate voice
+
         valid_voices = ["alloy", "ash", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"]
         if request.voice not in valid_voices:
             raise HTTPException(status_code=400, detail=f"Invalid voice. Must be one of: {', '.join(valid_voices)}")
-        
-        # Validate speed
+
         if request.speed < 0.25 or request.speed > 4.0:
             raise HTTPException(status_code=400, detail="Speed must be between 0.25 and 4.0")
-        
-        # Initialize TTS
-        tts = OpenAITextToSpeech(api_key=api_key)
-        
-        # Generate speech
-        audio_bytes = await tts.generate_speech(
-            text=request.text,
+
+        client = OpenAI(api_key=api_key)
+
+        # OpenAI TTS (returns bytes)
+        audio = client.audio.speech.create(
             model=request.model,
             voice=request.voice,
+            input=request.text,
             speed=request.speed,
-            response_format="mp3"
+            format="mp3",
         )
-        
-        # Convert to base64
-        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
-        
+
+        audio_bytes = audio.read()
+        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
         return TTSResponse(audio_base64=audio_base64, format="mp3")
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -179,37 +173,37 @@ async def ocr_image(request: OCRRequest):
 async def text_to_speech_stream(request: TTSRequest):
     """Stream audio directly for immediate playback"""
     try:
-        from emergentintegrations.llm.openai import OpenAITextToSpeech
-        
-        api_key = os.getenv("EMERGENT_LLM_KEY")
+        api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            raise HTTPException(status_code=500, detail="TTS API key not configured")
-        
+            raise HTTPException(status_code=500, detail="OPENAI_API_KEY not configured")
+
         if len(request.text) > 4096:
             raise HTTPException(status_code=400, detail="Text exceeds maximum length of 4096 characters")
-        
+
         if not request.text.strip():
             raise HTTPException(status_code=400, detail="Text cannot be empty")
-        
-        tts = OpenAITextToSpeech(api_key=api_key)
-        
-        audio_bytes = await tts.generate_speech(
-            text=request.text,
+
+        client = OpenAI(api_key=api_key)
+
+        audio = client.audio.speech.create(
             model=request.model,
             voice=request.voice,
+            input=request.text,
             speed=request.speed,
-            response_format="mp3"
+            format="mp3",
         )
-        
+
+        audio_bytes = audio.read()
+
         return Response(
             content=audio_bytes,
             media_type="audio/mpeg",
             headers={
                 "Content-Disposition": "inline",
                 "Cache-Control": "no-cache"
-            }
+            },
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

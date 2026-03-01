@@ -196,36 +196,25 @@ async def text_to_speech(request: TTSRequest):
 
 @api_router.post("/tts/stream")
 async def text_to_speech_stream(request: TTSRequest):
-    """Return raw mp3 bytes for immediate playback."""
     try:
         client = require_openai_client()
-
-        if len(request.text) > 4096:
-            raise HTTPException(status_code=400, detail="Text exceeds maximum length of 4096 characters")
-        if not request.text.strip():
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
 
         audio = client.audio.speech.create(
             model=request.model,
             voice=request.voice,
             input=request.text,
             speed=request.speed,
-            response_format="mp3",
         )
 
         audio_bytes = audio.read()
 
         return Response(
             content=audio_bytes,
-            media_type="audio/mpeg",
-            headers={"Content-Disposition": "inline", "Cache-Control": "no-cache"},
+            media_type="audio/mpeg"
         )
 
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"TTS stream failed: {e}")
-        raise HTTPException(status_code=500, detail=f"TTS stream failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @api_router.post("/ocr", response_model=OCRResponse)

@@ -1,3 +1,4 @@
+from openai import OpenAI
 from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.responses import Response
 from dotenv import load_dotenv

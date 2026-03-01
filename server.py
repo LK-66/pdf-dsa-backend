@@ -163,28 +163,26 @@ async def text_to_speech(request: TTSRequest):
     try:
         client = require_openai_client()
 
-        # Validate text
         if len(request.text) > 4096:
             raise HTTPException(status_code=400, detail="Text exceeds maximum length of 4096 characters")
         if not request.text.strip():
             raise HTTPException(status_code=400, detail="Text cannot be empty")
 
-        # Validate voice
         valid_voices = ["alloy", "ash", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"]
         if request.voice not in valid_voices:
             raise HTTPException(status_code=400, detail=f"Invalid voice. Must be one of: {', '.join(valid_voices)}")
 
-        # Validate speed
         if request.speed < 0.25 or request.speed > 4.0:
             raise HTTPException(status_code=400, detail="Speed must be between 0.25 and 4.0")
 
         audio = client.audio.speech.create(
-    model=request.model,
-    voice=request.voice,
-    input=request.text,
-    speed=request.speed,
-    response_format="mp3",
-)
+            model=request.model,
+            voice=request.voice,
+            input=request.text,
+            speed=request.speed,
+            response_format="mp3",
+        )
+
         audio_bytes = audio.read()
         audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
         return TTSResponse(audio_base64=audio_base64, format="mp3")
@@ -208,12 +206,13 @@ async def text_to_speech_stream(request: TTSRequest):
             raise HTTPException(status_code=400, detail="Text cannot be empty")
 
         audio = client.audio.speech.create(
-    model=request.model,
-    voice=request.voice,
-    input=request.text,
-    speed=request.speed,
-    response_format="mp3",
-)
+            model=request.model,
+            voice=request.voice,
+            input=request.text,
+            speed=request.speed,
+            response_format="mp3",
+        )
+
         audio_bytes = audio.read()
 
         return Response(
